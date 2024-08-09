@@ -10,23 +10,28 @@ export interface Id {
 };
 
 /// players and cards are sorted by id so that finding an object in those arrays is O(log n)
-export function sortById(lhs: Id, rhs: Id) {
-    return lhs.id - rhs.id;
-}
-
-export function searchById<T extends Id>(values: T[], target: number): T | null {
+export function searchIndexById<T extends Id>(values: T[], target: number): number {
     let left: number = 0;
     let right: number = values.length - 1;
   
     while (left <= right) {
       const mid: number = Math.floor((left + right) / 2);
   
-      if (values[mid].id === target) return values[mid];
+      if (values[mid].id === target) return mid;
       if (target < values[mid].id) right = mid - 1;
       else left = mid + 1;
     }
   
-    return null;
+    return left;
+}
+
+export function searchById<T extends Id>(values: T[], target: number): T | null {
+    const value = values.at(searchIndexById(values, target));
+    return value?.id === target ? value : null;
+}
+
+export function insertSorted<T extends Id>(values: T[], elem: T) {
+    values.splice(searchIndexById(values, elem.id), 0, elem);
 }
 
 /// Takes as arguments an array of values, an id and a mapping function

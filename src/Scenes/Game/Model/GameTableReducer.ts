@@ -4,7 +4,7 @@ import { CARD_SLOT_ID_FROM, CARD_SLOT_ID_TO } from "../Pockets/CardSlot";
 import { GameFlag } from "./CardEnums";
 import { addToPocket, editPocketMap, removeFromPocket } from "./EditPocketMap";
 import { getCardPocket } from "./Filters";
-import { GameTable, Player, editById, getCard, getCardBackface, getCardImage, newCard, newPlayer, newPocketId, searchById, sortById } from "./GameTable";
+import { GameTable, Player, editById, getCard, getCardBackface, getCardImage, insertSorted, newCard, newPlayer, newPocketId, searchById } from "./GameTable";
 import { TableUpdate } from "./GameUpdate";
 import targetSelectorReducer from "./TargetSelectorReducer";
 
@@ -14,11 +14,11 @@ const gameTableReducer = createUnionReducer<GameTable, TableUpdate>({
     add_cards ({ card_ids, pocket, player }) {
         const pocketRef = newPocketId(pocket, player);
         const [pockets, players] = addToPocket(this.pockets, this.players, pocketRef, card_ids.map(card => card.id));
-        return {
-            ...this,
-            cards: this.cards.concat(card_ids.map(({ id, deck }) => newCard(id, deck, pocketRef))).sort(sortById),
-            pockets, players
-        };
+        let cards = this.cards.slice();
+        for (const { id, deck } of card_ids) {
+            insertSorted(cards, newCard(id, deck, pocketRef));
+        }
+        return { ...this, cards, pockets, players };
     },
 
     /// Removes the specified cards
@@ -51,7 +51,8 @@ const gameTableReducer = createUnionReducer<GameTable, TableUpdate>({
             if (foundPlayer) {
                 newPlayers = editById(newPlayers, player_id, player => ({ ...player, user_id }));
             } else {
-                newPlayers = newPlayers.concat(newPlayer(player_id, user_id)).sort(sortById);
+                newPlayers = newPlayers.slice();
+                insertSorted(newPlayers, newPlayer(player_id, user_id));
                 newAlivePlayers = newAlivePlayers.concat(player_id);
             }
         }
